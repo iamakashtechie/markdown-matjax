@@ -1,0 +1,1073 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Live Markdown Editor with MathJax</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --primary-dark: #2980b9;
+            --header-bg: #2c3e50;
+            --text-color: #333;
+            --border-color: #ddd;
+            --hint-color: #555;
+            --blockquote-color: #6a737d;
+            --success-color: #2ecc71;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 10px;
+            color: var(--text-color);
+            background-color: #f9f9f9;
+            transition: all 0.3s ease;
+            line-height: 1.6;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            gap: 20px;
+        }
+
+        @media (min-width: 768px) {
+            .container {
+                flex-direction: row;
+            }
+
+            .editor-section,
+            .preview-section {
+                width: 50%;
+            }
+
+            .editor-section {
+                padding-right: 15px;
+            }
+
+            .preview-section {
+                padding-left: 15px;
+            }
+
+            body {
+                padding: 20px;
+            }
+        }
+
+        .hint {
+            text-align: right;
+            color: var(--hint-color);
+            font-size: small;
+            margin-top: 5px;
+        }
+
+        .hint a {
+            color: var(--hint-color);
+            text-decoration: none;
+            border-bottom: 1px dotted;
+        }
+
+        .hint a:hover {
+            color: var(--primary-color);
+        }
+
+        textarea {
+            margin-top: 1ex;
+            width: 100%;
+            height: 70vh;
+            padding: 15px;
+            font-family: 'Consolas', monospace;
+            font-size: 14px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            resize: vertical;
+            box-sizing: border-box;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+            transition: border 0.3s, box-shadow 0.3s;
+            line-height: 1.5;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1), 0 0 8px rgba(52, 152, 219, 0.6);
+        }
+
+        .preview {
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 20px;
+            width: 100%;
+            margin-top: 1ex;
+            min-height: 70vh;
+            box-sizing: border-box;
+            overflow-y: auto;
+            background-color: white;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            line-height: 1.6;
+        }
+
+        .preview img {
+            max-width: 100%;
+            height: auto;
+        }
+
+        .preview table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 15px 0;
+        }
+
+        .preview th,
+        .preview td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        .preview th {
+            background-color: #f2f2f2;
+        }
+
+        .preview code {
+            background-color: #f5f5f5;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: 'Consolas', monospace;
+        }
+
+        .preview pre {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+
+        header {
+            background-color: var(--header-bg);
+            color: white;
+            padding: 1rem;
+            text-align: center;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+        }
+
+        .theme-toggle {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+
+        footer {
+            margin-top: 20px;
+            padding: 15px;
+            text-align: center;
+            font-size: 0.8rem;
+            color: #666;
+            border-top: 1px solid #eee;
+        }
+
+        blockquote {
+            color: var(--blockquote-color);
+            padding: 10px 15px;
+            margin: 15px 0;
+            border-left: 3px solid #73A0C5;
+            background-color: rgba(115, 160, 197, 0.05);
+            border-radius: 0 4px 4px 0;
+        }
+
+        blockquote>blockquote {
+            border-color: #CF908D;
+            background-color: rgba(207, 144, 141, 0.05);
+        }
+
+        blockquote>blockquote>blockquote {
+            border-color: #57C59C;
+            background-color: rgba(87, 197, 156, 0.05);
+        }
+
+        blockquote>blockquote>blockquote>blockquote {
+            border-color: #C957F8;
+            background-color: rgba(201, 87, 248, 0.05);
+        }
+
+        blockquote>blockquote>blockquote>blockquote>blockquote {
+            border-color: #F8B829;
+            background-color: rgba(248, 184, 41, 0.05);
+        }
+
+        blockquote p:first-of-type {
+            margin-top: 0;
+        }
+
+        blockquote p:last-of-type {
+            margin-bottom: 0;
+        }
+
+        .toolbar {
+            padding: 10px;
+            background-color: #f1f1f1;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            margin-bottom: 15px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .toolbar-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-right: 10px;
+            border-right: 1px solid #ddd;
+            padding-right: 10px;
+        }
+
+        .toolbar-group:last-child {
+            border-right: none;
+        }
+
+        .toolbar button {
+            padding: 8px 12px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .toolbar button:hover {
+            background-color: var(--primary-dark);
+        }
+
+        .toolbar button:active {
+            transform: scale(0.98);
+        }
+
+        .toolbar button.danger {
+            background-color: var(--danger-color);
+        }
+
+        .toolbar button.danger:hover {
+            background-color: #c0392b;
+        }
+
+        .fullscreen-btn {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            background-color: rgba(52, 152, 219, 0.8);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 10;
+            opacity: 0.7;
+            transition: opacity 0.3s;
+        }
+
+        .fullscreen-btn:hover {
+            opacity: 1;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .section-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--header-bg);
+        }
+
+        .word-count {
+            font-size: 0.8rem;
+            color: var(--hint-color);
+        }
+
+        .editor-container,
+        .preview-container {
+            position: relative;
+        }
+
+        /* Dark mode styles */
+        body.dark-mode {
+            background-color: #1a1a1a;
+            color: #eee;
+        }
+
+        body.dark-mode .preview {
+            background-color: #2d2d2d;
+            border-color: #444;
+            color: #eee;
+        }
+
+        body.dark-mode textarea {
+            background-color: #2d2d2d;
+            color: #eee;
+            border-color: #444;
+        }
+
+        body.dark-mode .toolbar {
+            background-color: #333;
+            border-color: #444;
+        }
+
+        body.dark-mode .preview code {
+            background-color: #333;
+        }
+
+        body.dark-mode .preview pre {
+            background-color: #333;
+        }
+
+        body.dark-mode .hint,
+        body.dark-mode .hint a {
+            color: #aaa;
+        }
+
+        /* Notification styles */
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            background-color: var(--success-color);
+            color: white;
+            border-radius: 4px;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16);
+            z-index: 1000;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 0.3s, transform 0.3s;
+        }
+
+        .notification.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Mobile responsiveness improvements */
+        @media (max-width: 767px) {
+            .toolbar {
+                overflow-x: auto;
+                white-space: nowrap;
+                justify-content: flex-start;
+                padding: 8px;
+            }
+
+            .toolbar button {
+                padding: 6px 10px;
+                font-size: 0.8rem;
+            }
+
+            .editor-section,
+            .preview-section {
+                width: 100%;
+            }
+
+            header {
+                padding: 0.8rem;
+            }
+
+            header h1 {
+                font-size: 1.2rem;
+            }
+
+            .preview {
+                padding: 15px;
+            }
+
+            textarea {
+                height: 50vh;
+            }
+
+            .preview {
+                min-height: 50vh;
+            }
+        }
+
+        /* Animations */
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .pulse {
+            animation: pulse 0.5s;
+        }
+
+        /* Loading indicator */
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(52, 152, 219, 0.3);
+            border-radius: 50%;
+            border-top-color: var(--primary-color);
+            animation: spin 1s ease-in-out infinite;
+            z-index: 5;
+        }
+
+        @keyframes spin {
+            to {
+                transform: translate(-50%, -50%) rotate(360deg);
+            }
+        }
+
+        /* Tab styles for mobile view */
+        .tabs {
+            display: none;
+        }
+
+        @media (max-width: 767px) {
+            .tabs {
+                display: flex;
+                margin-bottom: 15px;
+            }
+
+            .tab {
+                flex: 1;
+                text-align: center;
+                padding: 10px;
+                background-color: #f1f1f1;
+                cursor: pointer;
+                border: 1px solid var(--border-color);
+            }
+
+            .tab.active {
+                background-color: var(--primary-color);
+                color: white;
+            }
+
+            .editor-section,
+            .preview-section {
+                display: none;
+            }
+
+            .editor-section.active,
+            .preview-section.active {
+                display: block;
+            }
+        }
+    </style>
+
+    <script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    showProcessingMessages: false,
+    tex2jax: { inlineMath: [['$','$'],['\\(','\\)']], processEscapes: true },
+    TeX: { equationNumbers: {autoNumber: "AMS"} }
+  });
+</script>
+    <script type="text/javascript"
+        src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <!-- Use specific version of marked for compatibility -->
+    <script src="https://cdn.jsdelivr.net/npm/marked@4.3.0/marked.min.js"></script>
+
+    <script>
+        // Use marked with the correct options
+        document.addEventListener('DOMContentLoaded', function () {
+            marked.use({
+                renderer: new marked.Renderer(),
+                gfm: true,
+                breaks: false,
+                pedantic: false,
+                sanitize: false,
+                smartLists: true,
+                smartypants: false
+            });
+        });
+    </script>
+
+    <script>
+        var Preview = {
+            delay: 50,        // delay after keystroke before updating
+            preview: null,     // filled in by Init below
+            buffer: null,      // filled in by Init below
+            timeout: null,     // store setTimout id
+            mjRunning: false,  // true when MathJax is processing
+            oldtext: null,     // used to check if an update is needed
+            loadingIndicator: null, // loading spinner
+
+            //
+            //  Get the preview and buffer DIV's
+            //
+            Init: function () {
+                this.preview = document.getElementById("marked-mathjax-preview");
+                this.buffer = document.getElementById("marked-mathjax-preview-buffer");
+                this.textarea = document.getElementById("marked-mathjax-input");
+                this.loadingIndicator = document.getElementById("loading-indicator");
+
+                // Event listener for auto-save
+                this.textarea.addEventListener('input', function () {
+                    Preview.Update();
+                    saveToLocalStorage();
+                    updateWordCount();
+                });
+            },
+
+            //
+            //  Switch the buffer and preview, and display the right one.
+            //
+            SwapBuffers: function () {
+                var buffer = this.preview;
+                var preview = this.buffer;
+                this.buffer = buffer;
+                this.preview = preview;
+                buffer.style.display = "none";
+                buffer.style.position = "absolute";
+                preview.style.position = "";
+                preview.style.display = "";
+
+                // Hide loading indicator
+                if (this.loadingIndicator) {
+                    this.loadingIndicator.style.display = "none";
+                }
+            },
+
+            //
+            //  Update after a delay
+            //
+            Update: function () {
+                if (this.timeout) { clearTimeout(this.timeout) }
+                this.timeout = setTimeout(this.callback, this.delay);
+
+                // Show loading indicator
+                if (this.loadingIndicator) {
+                    this.loadingIndicator.style.display = "block";
+                }
+            },
+
+            //
+            //  Creates the preview and runs MathJax on it.
+            //  
+            CreatePreview: function () {
+                Preview.timeout = null;
+                if (this.mjRunning) return;
+                var text = this.textarea.value;
+                if (text === this.oldtext) {
+                    if (this.loadingIndicator) {
+                        this.loadingIndicator.style.display = "none";
+                    }
+                    return;
+                }
+                text = this.Escape(text);                       //Escape tags before doing stuff
+                this.buffer.innerHTML = this.oldtext = text;
+                this.mjRunning = true;
+                MathJax.Hub.Queue(
+                    ["Typeset", MathJax.Hub, this.buffer],
+                    ["PreviewDone", this],
+                    ["resetEquationNumbers", MathJax.InputJax.TeX]
+                );
+            },
+
+            //
+            //  Indicate that MathJax is no longer running,
+            //  do markdown over MathJax's result, 
+            //  and swap the buffers to show the results.
+            //
+            PreviewDone: function () {
+                this.mjRunning = false;
+                var text = this.buffer.innerHTML;
+                text = this.PartialDescape(text);
+                try {
+                    this.buffer.innerHTML = marked.parse(text);
+
+                    // Add target="_blank" to all links
+                    const links = this.buffer.querySelectorAll('a');
+                    links.forEach(link => {
+                        if (link.getAttribute('href') && link.getAttribute('href').startsWith('http')) {
+                            link.setAttribute('target', '_blank');
+                            link.setAttribute('rel', 'noopener noreferrer');
+                        }
+                    });
+
+                } catch (e) {
+                    console.error("Marked error: ", e);
+                    this.buffer.innerHTML = "<p>Error rendering markdown: " + e.message + "</p>";
+                }
+                this.SwapBuffers();
+            },
+
+            Escape: function (html, encode) {
+                return html
+                    .replace(!encode ? /&(?!#?\w+;)/g : /&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#39;');
+            },
+
+            PartialDescape: function (html) {
+                var lines = html.split('\n');
+                var out = '';
+                var inside_code = false;
+
+                for (var i = 0; i < lines.length; i++) {
+                    // a hack to properly render the blockquotes
+                    if (lines[i].startsWith('&gt;')) {
+                        lines[i] = lines[i].replace(/&gt;/g, '>');
+                    }
+
+                    // render properly stuff like this
+                    // ```c
+                    //  if (a > b)
+                    // ```
+                    if (inside_code) {
+                        // inside the code we descape stuff
+                        lines[i] = lines[i]
+                            .replace(/&lt;/g, '<')
+                            .replace(/&gt;/g, '>')
+                            .replace(/&quot;/g, '"')
+                            .replace(/&#39;/g, '\'');
+                    }
+                    if (lines[i].startsWith('```')) {
+                        inside_code = !inside_code;
+                    }
+                    out += lines[i] + '\n';
+                }
+                return out;
+            }
+        };
+
+        // Cache a callback to the CreatePreview action
+        Preview.callback = MathJax.Callback(["CreatePreview", Preview]);
+        Preview.callback.autoReset = true;  // make sure it can run more than once
+
+        // Function to insert formatted text
+        function insertFormatting(before, after) {
+            const textarea = document.getElementById('marked-mathjax-input');
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const selectedText = textarea.value.substring(start, end);
+
+            const replacement = before + selectedText + after;
+            textarea.value = textarea.value.substring(0, start) + replacement + textarea.value.substring(end);
+
+            // Set cursor position
+            const newCursorPos = selectedText ? start + before.length + selectedText.length + after.length : start + before.length;
+            textarea.focus();
+            textarea.setSelectionRange(newCursorPos, newCursorPos);
+
+            // Update preview
+            Preview.Update();
+            saveToLocalStorage();
+            updateWordCount();
+
+            // Show notification
+            showNotification("Formatting applied");
+        }
+
+        // Function to show notification
+        function showNotification(message, type = 'success') {
+            // Remove any existing notification
+            const existingNotification = document.querySelector('.notification');
+            if (existingNotification) {
+                existingNotification.remove();
+            }
+
+            // Create new notification
+            const notification = document.createElement('div');
+            notification.className = 'notification ' + type;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+
+            // Show the notification
+            setTimeout(() => {
+                notification.classList.add('show');
+            }, 10);
+
+            // Hide the notification after 2 seconds
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => {
+                    notification.remove();
+                }, 300);
+            }, 2000);
+        }
+
+        // Function to toggle dark mode
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            const isDarkMode = document.body.classList.contains('dark-mode');
+            localStorage.setItem('darkMode', isDarkMode);
+
+            // Update button text
+            const themeToggle = document.getElementById('theme-toggle');
+            themeToggle.textContent = isDarkMode ? '☀️' : '🌙';
+
+            showNotification(isDarkMode ? "Dark mode enabled" : "Light mode enabled");
+        }
+
+        // Function to save to local storage
+        function saveToLocalStorage() {
+            const textarea = document.getElementById('marked-mathjax-input');
+            localStorage.setItem('markdownContent', textarea.value);
+        }
+
+        // Function to load from local storage
+        function loadFromLocalStorage() {
+            const textarea = document.getElementById('marked-mathjax-input');
+            const savedContent = localStorage.getItem('markdownContent');
+
+            if (savedContent && savedContent.trim() !== '') {
+                textarea.value = savedContent;
+                Preview.Update();
+            }
+
+            // Load dark/light mode preference
+            const darkMode = localStorage.getItem('darkMode') === 'true';
+            if (darkMode) {
+                document.body.classList.add('dark-mode');
+                document.getElementById('theme-toggle').textContent = '☀️';
+            }
+        }
+
+        // Function to handle fullscreen mode
+        function toggleFullscreen(element) {
+            const container = document.querySelector('.' + element);
+
+            if (container.classList.contains('fullscreen')) {
+                container.classList.remove('fullscreen');
+                document.exitFullscreen().catch(err => console.error(err));
+                return;
+            }
+
+            if (container.requestFullscreen) {
+                container.requestFullscreen();
+            } else if (container.mozRequestFullScreen) { /* Firefox */
+                container.mozRequestFullScreen();
+            } else if (container.webkitRequestFullscreen) { /* Chrome, Safari and Opera */
+                container.webkitRequestFullscreen();
+            } else if (container.msRequestFullscreen) { /* IE/Edge */
+                container.msRequestFullscreen();
+            }
+
+            container.classList.add('fullscreen');
+        }
+
+        // Function to export markdown
+        function exportMarkdown() {
+            const textarea = document.getElementById('marked-mathjax-input');
+            const content = textarea.value;
+            const blob = new Blob([content], { type: 'text/markdown' });
+
+            const a = document.createElement('a');
+            a.download = 'document.md';
+            a.href = URL.createObjectURL(blob);
+            a.click();
+
+            URL.revokeObjectURL(a.href);
+            showNotification("Markdown exported successfully");
+        }
+
+        // Function to export HTML
+        function exportHTML() {
+            const preview = document.getElementById('marked-mathjax-preview');
+            const content = preview.innerHTML;
+
+            // Add basic HTML structure
+            const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exported Document</title>
+    <style>
+        body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; padding: 20px; max-width: 800px; margin: 0 auto; }
+        img { max-width: 100%; }
+        pre { background-color: #f5f5f5; padding: 15px; border-radius: 4px; overflow-x: auto; }
+        code { background-color: #f5f5f5; padding: 2px 4px; border-radius: 3px; font-family: monospace; }
+        blockquote { border-left: 3px solid #73A0C5; padding-left: 15px; color: #666; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ddd; padding: 8px; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    ${content}
+</body>
+</html>
+  `;
+
+            const blob = new Blob([htmlContent], { type: 'text/html' });
+
+            const a = document.createElement('a');
+            a.download = 'document.html';
+            a.href = URL.createObjectURL(blob);
+            a.click();
+
+            URL.revokeObjectURL(a.href);
+            showNotification("HTML exported successfully");
+        }
+
+        // Function to export PDF (using print dialog)
+        function exportPDF() {
+            window.print();
+            showNotification("Print dialog opened for PDF export");
+        }
+
+        // Function to update word count
+        function updateWordCount() {
+            const textarea = document.getElementById('marked-mathjax-input');
+            const text = textarea.value;
+
+            // Remove code blocks, math blocks and other non-content elements
+            const cleanText = text
+                .replace(/```[\s\S]*?```/g, '') // Remove code blocks
+                .replace(/\$\$[\s\S]*?\$\$/g, '') // Remove math blocks
+                .replace(/\$.*?\$/g, '') // Remove inline math
+                .replace(/\[.*?\]\(.*?\)/g, '') // Remove link text
+                .trim();
+
+            const wordCount = cleanText === '' ? 0 : cleanText.split(/\s+/).length;
+            const charCount = text.length;
+
+            document.getElementById('word-count').textContent = `${wordCount} words, ${charCount} characters`;
+        }
+
+        // Function to clear editor content
+        function clearEditor() {
+            if (confirm('Are you sure you want to clear the editor? This action cannot be undone.')) {
+                document.getElementById('marked-mathjax-input').value = '';
+                Preview.Update();
+                saveToLocalStorage();
+                updateWordCount();
+                showNotification("Editor cleared");
+            }
+        }
+
+        // Function to toggle tabs on mobile
+        function switchTab(tab) {
+            // Hide all sections
+            document.querySelector('.editor-section').classList.remove('active');
+            document.querySelector('.preview-section').classList.remove('active');
+
+            // Deactivate all tabs
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+
+            // Activate the selected tab and section
+            document.querySelector('.' + tab + '-section').classList.add('active');
+            document.querySelector('.' + tab + '-tab').classList.add('active');
+        }
+
+        // Initialize everything when the DOM is ready
+        document.addEventListener('DOMContentLoaded', function () {
+            // Initialize Preview
+            Preview.Init();
+
+            // Load saved content
+            loadFromLocalStorage();
+
+            // Update word count initially
+            updateWordCount();
+
+            // Clear initial text on first focus
+            const textarea = document.getElementById('marked-mathjax-input');
+            if (textarea.value === 'Start typing...') {
+                let firstFocus = true;
+                textarea.addEventListener('focus', function () {
+                    if (firstFocus) {
+                        textarea.value = '';
+                        firstFocus = false;
+                        Preview.Update();
+                        updateWordCount();
+                    }
+                });
+            }
+
+            // Set up mobile tabs
+            if (window.innerWidth <= 767) {
+                switchTab('editor');
+            }
+
+            // Listen for fullscreen change
+            document.addEventListener('fullscreenchange', function () {
+                if (!document.fullscreenElement) {
+                    document.querySelectorAll('.fullscreen').forEach(el => {
+                        el.classList.remove('fullscreen');
+                    });
+                }
+            });
+
+            // Set up keyboard shortcuts
+            document.addEventListener('keydown', function (e) {
+                // Ctrl/Cmd + S to save
+                if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                    e.preventDefault();
+                    exportMarkdown();
+                }
+
+                // Ctrl/Cmd + B for bold
+                if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+                    e.preventDefault();
+                    insertFormatting('**', '**');
+                }
+
+                // Ctrl/Cmd + I for italic
+                if ((e.ctrlKey || e.metaKey) && e.key === 'i') {
+                    e.preventDefault();
+                    insertFormatting('*', '*');
+                }
+            });
+        });
+    </script>
+</head>
+
+<body>
+
+    <header>
+        <h1>Markdown-MathJax Editor</h1>
+        <button id="theme-toggle" class="theme-toggle" onclick="toggleDarkMode()">🌙</button>
+    </header>
+
+    <!-- Mobile Tabs -->
+    <div class="tabs">
+        <div class="tab editor-tab active" onclick="switchTab('editor')">Editor</div>
+        <div class="tab preview-tab" onclick="switchTab('preview')">Preview</div>
+    </div>
+
+    <div class="toolbar">
+        <div class="toolbar-group">
+            <button onclick="insertFormatting('**', '**')" title="Bold (Ctrl+B)">Bold</button>
+            <button onclick="insertFormatting('*', '*')" title="Italic (Ctrl+I)">Italic</button>
+            <button onclick="insertFormatting('~~', '~~')" title="Strikethrough">Strike</button>
+        </div>
+
+        <div class="toolbar-group">
+            <button onclick="insertFormatting('# ', '')" title="Heading 1">H1</button>
+            <button onclick="insertFormatting('## ', '')" title="Heading 2">H2</button>
+            <button onclick="insertFormatting('### ', '')" title="Heading 3">H3</button>
+        </div>
+
+        <div class="toolbar-group">
+            <button onclick="insertFormatting('[', '](url)')" title="Link">Link</button>
+            <button onclick="insertFormatting('![', '](image-url)')" title="Image">Image</button>
+            <button onclick="insertFormatting('> ', '')" title="Blockquote">Quote</button>
+        </div>
+
+        <div class="toolbar-group">
+            <button onclick="insertFormatting('```\n', '\n```')" title="Code Block">Code Block</button>
+            <button onclick="insertFormatting('`', '`')" title="Inline Code">Code</button>
+            <button onclick="insertFormatting('- ', '')" title="List Item">List</button>
+        </div>
+
+        <div class="toolbar-group">
+            <button onclick="insertFormatting('$', '$')" title="Inline Math">Math</button>
+            <button onclick="insertFormatting('$$\n', '\n$$')" title="Math Block">Math Block</button>
+        </div>
+
+        <div class="toolbar-group">
+            <button onclick="exportMarkdown()" title="Export as Markdown (Ctrl+S)">Export MD</button>
+            <button onclick="exportHTML()" title="Export as HTML">Export HTML</button>
+            <button onclick="exportPDF()" title="Export as PDF">Print/PDF</button>
+        </div>
+
+        <div class="toolbar-group">
+            <button onclick="clearEditor()" class="danger" title="Clear editor content">Clear</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="editor-section active">
+            <div class="section-header">
+                <div class="section-title">Editor</div>
+                <div id="word-count" class="word-count">0 words, 0 characters</div>
+            </div>
+            <div class="editor-container">
+                <textarea id="marked-mathjax-input" name="comment" autofocus>Start typing...</textarea>
+                <button class="fullscreen-btn" onclick="toggleFullscreen('editor-container')"
+                    title="Toggle fullscreen">⛶</button>
+            </div>
+            <div class="hint">
+                Use <a href="http://en.wikibooks.org/wiki/LaTeX/Mathematics" target="_blank">$\LaTeX$</a> for formulas
+                and <a href="https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet"
+                    target="_blank">Markdown</a> for formatting.
+            </div>
+        </div>
+
+        <div class="preview-section">
+            <div class="section-header">
+                <div class="section-title">Preview</div>
+            </div>
+            <div class="preview-container">
+                <div class="preview" id="marked-mathjax-preview"></div>
+                <div class="preview" id="marked-mathjax-preview-buffer"
+                    style="display:none; position:absolute; top:0; left: 0"></div>
+                <div id="loading-indicator" class="loading" style="display:none;"></div>
+                <button class="fullscreen-btn" onclick="toggleFullscreen('preview-container')"
+                    title="Toggle fullscreen">⛶</button>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>Markdown-MathJax Editor | <a href="#"
+                onclick="localStorage.clear(); showNotification('Local storage cleared'); return false;">Clear Saved
+                Content</a></p>
+    </footer>
+
+    <script>
+        Preview.Init();
+        Preview.Update();
+    </script>
+
+</body>
+
+</html>
